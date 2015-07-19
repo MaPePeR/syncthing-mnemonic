@@ -1,26 +1,31 @@
 <html>
     <head>
-        <Link rel="stylesheet" href="http://cdn.rawgit.com/LeaVerou/awesomplete/gh-pages/awesomplete.css">
-        <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
-        <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+        <Link rel="stylesheet" href="//cdn.rawgit.com/LeaVerou/awesomplete/gh-pages/awesomplete.css">
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
         <style>
         /*Fix to make awesomplete working with Bootstrap*/
             div.awesomplete {
                 display: block;
             }
         </style>
-        <script src="http://cdn.rawgit.com/LeaVerou/awesomplete/gh-pages/awesomplete.min.js"></script>
-        <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
-        <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+        <script src="//cdn.rawgit.com/LeaVerou/awesomplete/gh-pages/awesomplete.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
     </head>
     <body>
+        <a href="https://github.com/MaPePeR/syncthing-mnemonic"><img style="position: absolute; top: 0; right: 0; border: 0;" src="//camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
         <!-- trick from http://stackoverflow.com/a/4534000/2256700 -->
         <iframe id="wordFile" src="english.txt" style="display: none;"></iframe>
 
         <div class="container">
             <div class="jumbotron">
                 <h1>Syncthing Mnemonic Converter</h1>
-                <p>Convert a <a href="https://syncthing.net/" target="_blank">Syncthing</a> DeviceID to and from 24 english words, which are easier to type, read and dictate.</p>
+                <p>
+                    Convert a <a href="https://syncthing.net/" target="_blank">Syncthing</a> DeviceID to and from 24 english words, which are easier to type, read and dictate.
+                <br/>
+                    Uses a wordlist from the <a href="https://github.com/trezor/python-mnemonic" target="_blank">trezor/python-mnemonic</a> project.
+                </p>
             </div>
 
             <form role="form">
