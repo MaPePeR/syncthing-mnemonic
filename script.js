@@ -1,3 +1,5 @@
+/* jshint strict: true, curly: true*/
+
 var base32chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 var base32map = {};
 (function init() {
@@ -7,7 +9,6 @@ var base32map = {};
         base32map[base32chars[i]] = i;
     }
 }());
-
 
 //P56IOI-7MZJNU-2IQGDR-EYDM2M-GTMGL3-BXNPQ6-W5BTBB-Z4TJXZ-WICQ
 //P56IOI7-MZJNU2Y-IQGDREY-DM2MGTI-MGL3BXN-PQ6W5BM-TBBZ4TJ-XZWICQ2
@@ -43,16 +44,22 @@ function testUnifyDeviceId() {
     console.log("testUnifyDeviceId passed");
 }
 
-function getBit(unifiedId, n) {
+function getBitFromBase32(unifiedId, n) {
     'use strict';
-    var whichCharacter = Math.floor(n / 5), chr = base32map[unifiedId[whichCharacter] || "A"];
-    //console.log("getBit("+unifiedId + ", "+ n + "). CharId = " + whichCharacter +" chr = " + chr);
-    //Shift chr to the right, so the interesting bit is at the rightmost postion
-    chr = (chr >> (4 - (n % 5)));
-    return (chr & 1) > 0;
+    return getBit(n, 5, function getGroupFromBase32String(whichGroup) {
+        return base32map[unifiedId[whichGroup] || "A"];
+    });
+}
+function getBit(n, groupsize, getGroup) {
+    'use strict';
+    var whichGroup = Math.floor(n / groupsize), group = getGroup(whichGroup);
+    //console.log("getBit(" + n + ", " + groupsize +"). CharId = " + whichGroup + " group = " + group);
+    //Shift group to the right, so the interesting bit is at the rightmost postion
+    group = (group >> (groupsize - 1 - (n % groupsize)));
+    return (group & 1) > 0;
 }
 
-function testGetBit() {
+function testGetBitFromBase32() {
     'use strict';
     var i, j, result, tests = [
         ["7A7A", [true, true, true, true, true, false, false, false, false, false, true, true, true, true, true, false, false, false, false, false]],
@@ -62,38 +69,75 @@ function testGetBit() {
     ];
     for (i = 0; i < tests.length; i += 1) {
         for (j = 0; j < tests[i][1].length; j += 1) {
-            result = getBit(tests[i][0], j);
+            result = getBitFromBase32(tests[i][0], j);
             if (result !== tests[i][1][j]) {
-                throw "Testcase-Fail for getBit(" + tests[i][0] +", " + j + "): got \'" + result + "\' expected \'" + tests[i][1][j] + "\'";
+                throw "Testcase-Fail for getBitFromBase32(" + tests[i][0] +", " + j + "): got \'" + result + "\' expected \'" + tests[i][1][j] + "\'";
             }
         }
     }
-    console.log("testGetBit passed");
+    console.log("testGetBitFromBase32 passed");
 }
 
-function unifiedIdToWordIds(unifiedId) {
+function regroupBits(oldgroupsize, newgroupsize, oldgroupcount, getGroup, appendGroup) {
     'use strict';
-    if (!unifiedId.match(/^[A-Z2-7]{52}$/)) {
-        throw "Not a unified DeviceID";
+    if (oldgroupcount * oldgroupsize % newgroupsize !== 0) {
+        throw "Cannot group " + oldgroupcount + " * " + oldgroupsize + " into groups of " + newgroupsize;
     }
-    var out = new Array(24), dataI = 0, outI = 0, space = 11, left, right;
-    for (dataI = 0; dataI < s.length; dataI += 1) {
-        if (space >= 5) {
-            //5 bits from dataI still fit into outI
-            space -= 5;
-            out[outI] = out[outI] | (base32map[unifiedId[dataI]] << space);
+    var i, j, newgroupcount = oldgroupcount * oldgroupsize / newgroupsize, outgroups, group;
+    for (i = 0; i < newgroupcount; i += 1) {
+        group = 0;
+        for (j = 0; j < newgroupsize; j += 1) {
+            if (getBit(i * newgroupsize + j, oldgroupsize, getGroup)) {
+                group |= (1 << (newgroupsize - j - 1));
+            }
+        }
+        outgroups = appendGroup(outgroups, group);
+    }
+    return outgroups;
+}
+
+function testRegroupBitsWithHex() {
+    'use strict';
+    function arrayEquals(a, b) {
+        if (a.length !== b.length) {
+            return false;
+        }
+        var i;
+        for (i = 0; i < a.length; i += 1) {
+            if (a[i] !== b[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+    function appendGroup(oldGroups, group) {
+        if (oldGroups === undefined) {
+            return [group];
         } else {
-            //Splitting the 5 bits into 2 parts.
-            left = (base32map[unifiedId[dataI]] >> (5 - space));
-            out[outI] = out[outI] | left;
-            outI += 1;
-            right = (base32map[unifiedId[dataI]] & (31 >> space));
-            space = 11 - (5 - space);
-            out[outI] = right << space;
+            oldGroups.push(group);
+            return oldGroups;
         }
     }
-    return out;
+    function makeGetGroup(groups) {
+        return function (whichGroup) {
+            return groups[whichGroup];
+        };
+    }
+    var i, getGroup, result, tests = [
+        {in: [0xA, 0xB, 0xC, 0xD], expected: [0xAB, 0xCD], gsize: 4, ngsize: 8},
+        {in: [0xC, 0x0, 0xF, 0xF], expected: [0xC0, 0xFF], gsize: 4, ngsize: 8},
+        {in: [0xC, 0x0], expected: [0xC0], gsize: 4, ngsize: 8},
+        {in: [0xABCD, 0xEF01], expected: [0xAB, 0xCD, 0xEF, 0x01], gsize: 4*4, ngsize: 2*4},
+    ];
+    for (i = 0; i < tests.length; i += 1) {
+        getGroup = makeGetGroup(tests[i].in);
+        result = regroupBits(tests[i].gsize, tests[i].ngsize, tests[i].in.length, getGroup, appendGroup);
+        if (!arrayEquals(result, tests[i].expected)) {
+            throw "Testcase-Fail for regroupBits(" + tests[i].gsize + ", " + tests[i].ngsize + ", " + tests[i].in.length + "): got \'" + result + "\' expected \'" + tests[i].expected + "\'";
+        }
+    }
+    console.log("testRegroupBitsWithHex passed");
 }
-
 testUnifyDeviceId();
-testGetBit();
+testGetBitFromBase32();
+testRegroupBitsWithHex();
