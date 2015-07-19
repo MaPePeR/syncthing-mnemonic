@@ -53,6 +53,35 @@ function testUnifyDeviceId() {
     console.log("testUnifyDeviceId passed");
 }
 
+function checkUnifiedId(unifiedId) {
+    'use strict';
+    if (!isUnifiedId(unifiedId)) {
+        throw unifiedId + "Is not a unified Id";
+    }
+}
+
+function unifiedToOldFormat(unifiedId) {
+    'use strict';
+    checkUnifiedId(unifiedId);
+    var out = "", sum = 0, i, oldFormatGroups = [6, 6, 6, 6, 6, 6, 6, 6, 4];
+    for (i = 0; i < oldFormatGroups.length - 1; i += 1) {
+        out += unifiedId.substring(sum, sum + oldFormatGroups[i]) + "-";
+        sum += oldFormatGroups[i];
+    }
+    return out + unifiedId.substring(sum, sum + oldFormatGroups[oldFormatGroups.length - 1]);
+}
+
+function testUnifiedToOldFormat() {
+    'use strict';
+    var oldformat = "P56IOI-7MZJNU-2IQGDR-EYDM2M-GTMGL3-BXNPQ6-W5BTBB-Z4TJXZ-WICQ";
+    var unifiedId = unifyDeviceId(oldformat);
+    var result = unifiedToOldFormat(unifiedId);
+    if (result !== oldformat) {
+        throw "Testcase-Fail for unifiedToOldFormat: got \'" + result + "\' expected \'" + oldformat +"\'";
+    }
+    console.log("testUnifiedToOldFormat passed");
+}
+
 function getBitFromBase32(unifiedId, n) {
     'use strict';
     return getBit(n, 5, function getGroupFromBase32String(whichGroup) {
@@ -169,9 +198,7 @@ function testRegroupBitsWithHex() {
 
 function deviceIdToBitGroups(unifiedId) {
     'use strict';
-    if (!isUnifiedId(unifiedId)) {
-        throw "Argument is not a unified Id";
-    }
+    checkUnifiedId(unifiedId);
     //Group DeviceID to 8-bit groups, so we can calculate an additonal checksum byte.
     var i, sum=0, byteGroups = regroupBitsWithZeroPadding(5, 8, unifiedId.length, 256/8, makeGetGroupForBase32(unifiedId), appendOrCreateGroupList);
     for (i = 0; i < byteGroups.length; i += 1) {
@@ -216,4 +243,5 @@ if (executeTests) {
     testGetBitFromBase32();
     testRegroupBitsWithHex();
     testForwardBackwordsConversion();
+    testUnifiedToOldFormat();
 }
