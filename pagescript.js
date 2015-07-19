@@ -108,7 +108,7 @@ function warning(message) {
 }
 
 $(document).ready(function () {
-    warning('At the moment the code is limited to only generate the old format of the Syncthing DeviceIDs, that does not contain a checksum by itself.')
+    warning('At the moment the code is limited to only generate the old format of the Syncthing DeviceIDs, that does not contain a checksum by itself.');
     'use strict';
     $('#wordInput').attr('disabled', true);
     $('#wordInput').keyup(function () {
@@ -123,7 +123,6 @@ $(document).ready(function () {
             $('#wordInput').attr('disabled', true);
             $('#deviceId').attr('disabled', false);
         } else if (val === 'toID') {
-
             $('#wordInput').attr('disabled', false);
             $('#deviceId').attr('disabled', true);
         }
@@ -139,6 +138,7 @@ $(document).ready(function () {
                 if (err) {
                     $('#deviceIdFormGroup').addClass('has-error').removeClass('has-success');
                     error(err);
+                    $('#wordInput').val('');
                 } else {
                     $('#deviceIdFormGroup').addClass('has-success').removeClass('has-error');
                     word = deviceIdToWords(deviceId);
@@ -149,6 +149,7 @@ $(document).ready(function () {
                 err = checkWordField(word);
                 if (err) {
                     $('#wordInputFormGroup').addClass('has-error').removeClass('has-success');
+                    $('#deviceId').val('');
                     error(err);
                 } else {
                     $('#wordInputFormGroup').addClass('has-success').removeClass('has-error');

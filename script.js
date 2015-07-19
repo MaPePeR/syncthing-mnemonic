@@ -217,7 +217,13 @@ function bitGroupsToDeviceId(groups) {
             return oldGroups + base32chars[group];
         }
     }
-    var groupOf8 = regroupBits(11, 8, groups.length, makeGetGroupForBrackets(groups), appendOrCreateGroupList);
+    var i, sum = 0, groupOf8 = regroupBits(11, 8, groups.length, makeGetGroupForBrackets(groups), appendOrCreateGroupList);
+    for (i = 0; i < groupOf8.length - 1; i += 1) {
+        sum = (sum + groupOf8[i]) & 0xFF;
+    }
+    if (sum !== groupOf8[groupOf8.length - 1]) {
+        throw 'Checksum did not match!';
+    }
     groupOf8[groupOf8.length - 1] = 0;
     return regroupBitsWithZeroPadding(8, 5, groupOf8.length - 1, Math.ceil(256 / 5), makeGetGroupForBrackets(groupOf8), appendWithBase32Char);
 }
