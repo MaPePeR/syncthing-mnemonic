@@ -25,7 +25,7 @@ function unifyDeviceId(id) {
     } else if (id.length === 60 && id.match(shortDeviceIdPattern)) {
         id = id.replace(/-/g, '');
     } else {
-        throw 'Illegal DeviceID!';
+        throw 'Cannot parse DeviceID!';
     }
     return id;
 }

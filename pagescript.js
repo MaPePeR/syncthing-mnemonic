@@ -71,34 +71,94 @@ function wordsToDeviceId(word) {
     return bitGroupsToDeviceId(bitGroups);
 }
 
+function checkWordField(word) {
+    var unknownWords = [];
+    var singleWords = word.split(/\s+/);
+    if (singleWords.length != 24) {
+        return 'Need 24 words to convert to a DeviceID (found ' + singleWords.length + ')';
+    }
+    for (i = 0; i < singleWords.length; i += 1) {
+        if (!(singleWords[i] in wordDict)) {
+            unknownWords.push(singleWords[i]);
+        }
+    }
+    if (unknownWords.length > 0) {
+        return 'Could not parse words: ' + unknownWords.join (', ');
+    }
+    return false;
+}
+
+function checkDeviceIdField(deviceId) {
+    try {
+        unifyDeviceId(deviceId);
+    } catch (e) {
+        return e;
+    }
+    return false;
+}
+
+function error(message) {
+    'use strict';
+    $('#alert_placeholder').html('<div class="alert alert-danger alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><span>' + message + '</span></div>');
+}
+
+function warning(message) {
+    'use strict';
+    $('#alert_placeholder').html('<div class="alert alert-warning alert-dismissable"><button type="button" class="close" data-dismiss="alert" aria-hidden="true">&times;</button><span>' + message + '</span></div>');
+}
+
 $(document).ready(function () {
+    warning('At the moment the code is limited to only generate the old format of the Syncthing DeviceIDs, that does not contain a checksum by itself.')
     'use strict';
     $('#wordInput').attr('disabled', true);
+    $('#wordInput').keyup(function () {
+        var word = $('#wordInput').val(), i;
+
+    });
     $('input[name=\'direction\']').change(function () {
         var val = $('input[name=\'direction\']:checked').val();
+        $('#alert_placeholder').html('');
+        $('#deviceIdFormGroup, #wordInputFormGroup').removeClass('has-error has-success');
         if (val === 'toWords') {
             $('#wordInput').attr('disabled', true);
-            $('#deviceid').attr('disabled', false);
+            $('#deviceId').attr('disabled', false);
         } else if (val === 'toID') {
+
             $('#wordInput').attr('disabled', false);
-            $('#deviceid').attr('disabled', true);
+            $('#deviceId').attr('disabled', true);
         }
     });
     $('#convertbutton').click(function () {
         var val = $('input[name=\'direction\']:checked').val();
-        //$('#alert_placeholder').html('');
-        var deviceId, word;
+        $('#alert_placeholder').html('');
+        var deviceId, word, err;
         try {
             if (val === 'toWords') {
-                deviceId = $('#deviceid').val();
-                word = deviceIdToWords(deviceId);
-                $('#wordInput').val(word);
+                deviceId = $('#deviceId').val();
+                err = checkDeviceIdField(deviceId);
+                if (err) {
+                    $('#deviceIdFormGroup').addClass('has-error').removeClass('has-success');
+                    error(err);
+                } else {
+                    $('#deviceIdFormGroup').addClass('has-success').removeClass('has-error');
+                    word = deviceIdToWords(deviceId);
+                    $('#wordInput').val(word);
+                }
             } else if (val === 'toID') {
-                deviceId = wordsToDeviceId($('#wordInput').val());
-                $('#deviceid').val(unifiedToOldFormat(deviceId));
+                word = $('#wordInput').val();
+                err = checkWordField(word);
+                if (err) {
+                    $('#wordInputFormGroup').addClass('has-error').removeClass('has-success');
+                    error(err);
+                } else {
+                    $('#wordInputFormGroup').addClass('has-success').removeClass('has-error');
+                    deviceId = wordsToDeviceId(word);
+                    $('#deviceId').val(unifiedToOldFormat(deviceId));
+                }
             }
         } catch (e) {
             console.log(e);
+            error('<strong>Internel Error</strong> ' + e);
         }
     });
 });
