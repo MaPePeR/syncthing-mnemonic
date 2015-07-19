@@ -13,8 +13,9 @@ var base32map = {};
 //P56IOI-7MZJNU-2IQGDR-EYDM2M-GTMGL3-BXNPQ6-W5BTBB-Z4TJXZ-WICQ
 //P56IOI7-MZJNU2Y-IQGDREY-DM2MGTI-MGL3BXN-PQ6W5BM-TBBZ4TJ-XZWICQ2
 //aaaaaaa-aaaaaaA-bbbbbbb-bbbbbbB-ccccccc-ccccccC-ddddddd-ddddddD
-var longDeviceIdPattern = /[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}/;
-var shortDeviceIdPattern = /[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{4}/;
+var longDeviceIdPattern = /^[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}$/;
+var shortDeviceIdPattern = /^[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{4}$/;
+var unifiedDeviceIdPattern = /^[A-Z2-7]{52}$/;
 function unifyDeviceId(id) {
     'use strict';
     if (id.length === 63 && id.match(longDeviceIdPattern)) {
@@ -29,6 +30,11 @@ function unifyDeviceId(id) {
     return id;
 }
 
+function isUnifiedId(id) {
+    'use strict';
+    return id.match(unifiedDeviceIdPattern);
+}
+
 function testUnifyDeviceId() {
     'use strict';
     var i, result, tests = [
@@ -37,6 +43,9 @@ function testUnifyDeviceId() {
     ];
     for (i = 0; i < tests.length; i += 1) {
         result = unifyDeviceId(tests[i][0]);
+        if (!isUnifiedId(result)) {
+            throw "Testcase-Fail: Returned non-unified Id";
+        }
         if (result !== tests[i][1]) {
             throw "Testcase-Fail for " + tests[i][0] + ":\n" + result + " !=\n" + tests[i][1];
         }
@@ -50,6 +59,7 @@ function getBitFromBase32(unifiedId, n) {
         return base32map[unifiedId[whichGroup] || "A"];
     });
 }
+
 function getBit(n, groupsize, getGroup) {
     'use strict';
     var whichGroup = Math.floor(n / groupsize), group = getGroup(whichGroup);
@@ -83,7 +93,12 @@ function regroupBits(oldgroupsize, newgroupsize, oldgroupcount, getGroup, append
     if (oldgroupcount * oldgroupsize % newgroupsize !== 0) {
         throw "Cannot group " + oldgroupcount + " * " + oldgroupsize + " into groups of " + newgroupsize;
     }
-    var i, j, newgroupcount = oldgroupcount * oldgroupsize / newgroupsize, outgroups, group;
+    return regroupBitsWithZeroPadding(oldgroupsize, newgroupsize, oldgroupcount, oldgroupcount * oldgroupsize / newgroupsize,  getGroup, appendGroup);
+}
+
+function regroupBitsWithZeroPadding(oldgroupsize, newgroupsize, oldgroupcount, newgroupcount, getGroup, appendGroup) {
+    'use strict';
+    var i, j, outgroups, group;
     for (i = 0; i < newgroupcount; i += 1) {
         group = 0;
         for (j = 0; j < newgroupsize; j += 1) {
@@ -94,6 +109,30 @@ function regroupBits(oldgroupsize, newgroupsize, oldgroupcount, getGroup, append
         outgroups = appendGroup(outgroups, group);
     }
     return outgroups;
+}
+
+function appendOrCreateGroupList(oldGroups, group) {
+    'use strict';
+    if (oldGroups === undefined) {
+        return [group];
+    } else {
+        oldGroups.push(group);
+        return oldGroups;
+    }
+}
+
+function makeGetGroupForBrackets(groups) {
+    'use strict';
+    return function (whichGroup) {
+        return groups[whichGroup];
+    };
+}
+
+function makeGetGroupForBase32(base64) {
+    'use strict';
+    return function getGroupFromBase32String(whichGroup) {
+        return base32map[base64[whichGroup] || "A"];
+    };
 }
 
 function testRegroupBitsWithHex() {
@@ -110,19 +149,7 @@ function testRegroupBitsWithHex() {
         }
         return true;
     }
-    function appendGroup(oldGroups, group) {
-        if (oldGroups === undefined) {
-            return [group];
-        } else {
-            oldGroups.push(group);
-            return oldGroups;
-        }
-    }
-    function makeGetGroup(groups) {
-        return function (whichGroup) {
-            return groups[whichGroup];
-        };
-    }
+
     var i, getGroup, result, tests = [
         {in: [0xA, 0xB, 0xC, 0xD], expected: [0xAB, 0xCD], gsize: 4, ngsize: 8},
         {in: [0xC, 0x0, 0xF, 0xF], expected: [0xC0, 0xFF], gsize: 4, ngsize: 8},
@@ -130,14 +157,63 @@ function testRegroupBitsWithHex() {
         {in: [0xABCD, 0xEF01], expected: [0xAB, 0xCD, 0xEF, 0x01], gsize: 4*4, ngsize: 2*4},
     ];
     for (i = 0; i < tests.length; i += 1) {
-        getGroup = makeGetGroup(tests[i].in);
-        result = regroupBits(tests[i].gsize, tests[i].ngsize, tests[i].in.length, getGroup, appendGroup);
+        getGroup = makeGetGroupForBrackets(tests[i].in);
+        result = regroupBits(tests[i].gsize, tests[i].ngsize, tests[i].in.length, getGroup, appendOrCreateGroupList);
         if (!arrayEquals(result, tests[i].expected)) {
             throw "Testcase-Fail for regroupBits(" + tests[i].gsize + ", " + tests[i].ngsize + ", " + tests[i].in.length + "): got \'" + result + "\' expected \'" + tests[i].expected + "\'";
         }
     }
     console.log("testRegroupBitsWithHex passed");
 }
-testUnifyDeviceId();
-testGetBitFromBase32();
-testRegroupBitsWithHex();
+
+
+function deviceIdToBitGroups(unifiedId) {
+    'use strict';
+    if (!isUnifiedId(unifiedId)) {
+        throw "Argument is not a unified Id";
+    }
+    //Group DeviceID to 8-bit groups, so we can calculate an additonal checksum byte.
+    var i, sum=0, byteGroups = regroupBitsWithZeroPadding(5, 8, unifiedId.length, 256/8, makeGetGroupForBase32(unifiedId), appendOrCreateGroupList);
+    for (i = 0; i < byteGroups.length; i += 1) {
+        sum = (sum + byteGroups[i]) & 0xFF;
+    }
+    byteGroups.push(sum);
+    //byteGroups now has 256 + 8 = 264 = 11 * 24 bits
+    return regroupBits(8, 11, byteGroups.length, makeGetGroupForBrackets(byteGroups), appendOrCreateGroupList);
+}
+
+function bitGroupsToDeviceId(groups) {
+    'use strict';
+    function appendWithBase32Char(oldGroups, group) {
+        if (oldGroups === undefined) {
+            return base32chars[group];
+        } else {
+            return oldGroups + base32chars[group];
+        }
+    }
+    var groupOf8 = regroupBits(11, 8, groups.length, makeGetGroupForBrackets(groups), appendOrCreateGroupList);
+    groupOf8[groupOf8.length - 1] = 0;
+    return regroupBitsWithZeroPadding(8, 5, groupOf8.length - 1, Math.ceil(256/5), makeGetGroupForBrackets(groupOf8), appendWithBase32Char);
+}
+
+function testForwardBackwordsConversion() {
+    'use strict';
+    var i, unifiedId, bitGroups, result, deviceIds = ["P56IOI-7MZJNU-2IQGDR-EYDM2M-GTMGL3-BXNPQ6-W5BTBB-Z4TJXZ-WICQ", "P56IOI7-MZJNU2Y-IQGDREY-DM2MGTI-MGL3BXN-PQ6W5BM-TBBZ4TJ-XZWICQ2"];
+    for (i = 0; i < deviceIds.length; i += 1) {
+        unifiedId = unifyDeviceId(deviceIds[i]);
+        bitGroups = deviceIdToBitGroups(unifiedId);
+        result = bitGroupsToDeviceId(bitGroups);
+        if (result !== unifiedId) {
+            throw "Testcase-Fail: Forward-BackwardsConversion did not result in original unified ID. Got " + result + " expected: " + unifiedId;
+        }
+    }
+    console.log("testForwardBackwordsConversion passed");
+}
+
+var executeTests = true;
+if (executeTests) {
+    testUnifyDeviceId();
+    testGetBitFromBase32();
+    testRegroupBitsWithHex();
+    testForwardBackwordsConversion();
+}
