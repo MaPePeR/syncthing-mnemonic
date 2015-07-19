@@ -236,7 +236,7 @@ function testForwardBackwordsConversion() {
     console.log('testForwardBackwordsConversion passed');
 }
 
-var executeTests = true;
+var executeTests = false;
 if (executeTests) {
     testUnifyDeviceId();
     testGetBitFromBase32();

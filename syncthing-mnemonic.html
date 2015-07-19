@@ -1,0 +1,45 @@
+<html>
+    <head>
+        <Link rel="stylesheet" href="http://cdn.rawgit.com/LeaVerou/awesomplete/gh-pages/awesomplete.css">
+        <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+        <link rel="stylesheet" href="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap-theme.min.css">
+        <style>
+        /*Fix to make awesomplete working with Bootstrap*/
+            div.awesomplete {
+                display: block;
+            }
+        </style>
+        <script src="http://cdn.rawgit.com/LeaVerou/awesomplete/gh-pages/awesomplete.min.js"></script>
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+        <script src="http://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+    </head>
+    <body>
+        <!-- trick from http://stackoverflow.com/a/4534000/2256700 -->
+        <iframe id="wordFile" src="english.txt" style="display: none;"></iframe>
+
+        <div class="container">
+            <div class="jumbotron">
+                <h1>Syncthing Mnemonic Converter</h1>
+                <p>Convert a <a href="https://syncthing.net/" target="_blank">Syncthing</a> DeviceID to and from 24 english words, which are easier to type, read and dictate.</p>
+            </div>
+
+            <form role="form">
+                <div class="form-group">
+                    <label class="radio-inline"><input type="radio" name="direction" value="toWords" checked>To Words</label>
+                    <label class="radio-inline"><input type="radio" name="direction" value="toID">To DeviceID</label>
+                </div>
+                <div class="form-group">
+                    <label for="deviceid">Syncthing DeviceID</label>
+                    <input type="text" class="form-control" id="deviceid"/>
+                </div>
+                <div class="form-group">
+                    <label for="wordInput">English words:</label>
+                    <input type=text id="wordInput" class="form-control" data-multiple/>
+                </div>
+                <button type="button" id="convertbutton" class="btn btn-default">Convert</button>
+            </form>
+        </div>
+        <script type="text/javascript" src="./pagescript.js"></script>
+        <script type="text/javascript" src="./script.js"></script>
+    </body>
+</html>
