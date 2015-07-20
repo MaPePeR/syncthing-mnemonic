@@ -27,28 +27,46 @@
                     Uses a wordlist from the <a href="https://github.com/trezor/python-mnemonic" target="_blank">trezor/python-mnemonic</a> project.
                 </p>
             </div>
-            <div class="alert alert-info"><strong>Information:</strong> At the moment the code is limited to only generate the <a href="https://forum.syncthing.net/t/v0-9-0-new-node-id-format/478" target="_blank">old format of the Syncthing DeviceIDs</a>. Don't  be surprised, when the resulting DeviceID looks a little bit different. <br/>
+            <div class="alert alert-info">
+                <strong>Information:</strong> At the moment the code is limited to only generate the <a href="https://forum.syncthing.net/t/v0-9-0-new-node-id-format/478" target="_blank">old format of the Syncthing DeviceIDs</a>.
+                Don't  be surprised, when the resulting DeviceID looks a little bit different.
                 It will also not use checksum that is integrated in the new DeviceID format.</div>
             <form role="form-horizontal">
                 <div class="form-group">
-                    <label class="radio-inline"><input type="radio" name="direction" value="toWords" checked>To Words</label>
-                    <label class="radio-inline"><input type="radio" name="direction" value="toID">To DeviceID</label>
+                    <div class="col-xs-12 col-md-3">
+                        <div class="btn-group btn-group-justified" data-toggle="buttons">
+                            <label class="btn btn-default active">
+                                <input type="radio" name="direction" value="toWords" autocomplete="off" checked> To words
+                            </label>
+                            <label class="btn btn-default">
+                                <input type="radio" name="direction" value="toID" autocomplete="off"> to DeviceID
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-xs-12 col-md-9">
+                        <div class="input-group">
+                            <div class="input-group-addon">Additional Checkword to verify integrity</div>
+                            <input type="text" class="form-control" id="checkword" readonly>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-group" id="deviceIdFormGroup">
-                    <label for="deviceId">Syncthing DeviceID</label>
-                    <input type="text" class="form-control" id="deviceId"/>
+                    <div class="col-xs-12">
+                        <label for="deviceId">Syncthing DeviceID</label>
+                        <input type="text" class="form-control" id="deviceId"/>
+                    </div>
                 </div>
                 <div class="form-group" id="wordInputFormGroup">
-                    <label for="wordInput">English words:</label>
-                    <input type=text id="wordInput" class="form-control" data-multiple/>
-                    <!--<span class="glyphicon glyphicon-remove form-control-feedback" aria-hidden="true"></span>
-                    <span id="wordInputErrorStatus" class="sr-only">(error)</span>-->
+                    <div class="col-xs-12">
+                        <label for="wordInput">English words:</label>
+                        <input type=text id="wordInput" class="form-control" data-multiple/>
+                    </div>
                 </div>
                 <div class="form-group">
-                    <div class="col-sm-1 col-xs-12">
+                    <div class="col-sm-2 col-xs-12">
                         <button type="button" id="convertbutton" class="btn btn-default">Convert</button>
                     </div>
-                    <div class="col-sm-11 col-xs-12" id="alert_placeholder">
+                    <div class="col-sm-10 col-xs-12" id="alert_placeholder">
                 </div>
             </form>
         </div>

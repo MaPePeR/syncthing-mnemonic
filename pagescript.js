@@ -54,10 +54,20 @@ $('#wordFile').load(function () {
     });
 });
 
+function bitGroupsToCheckword(bitGroups) {
+    'use strict';
+    var i, sum = 0;
+    for (i = 0; i < bitGroups.length; i++) {
+        sum  = (sum + bitGroups[i]) % words.length;
+    }
+    return words[sum];
+}
+
 function deviceIdToWords(deviceId) {
     var unifiedId, bitGroups;
     unifiedId = unifyDeviceId(deviceId);
     bitGroups = deviceIdToBitGroups(unifiedId);
+    $('#checkword').val(bitGroupsToCheckword(bitGroups));
     return bitGroups.map(function (v, i, a) {
         return words[v];
     }).join(' ');
@@ -68,6 +78,7 @@ function wordsToDeviceId(word) {
     var bitGroups = singleWords.map(function (v, i, a) {
         return wordDict[v];
     });
+    $('#checkword').val(bitGroupsToCheckword(bitGroups));
     return bitGroupsToDeviceId(bitGroups);
 }
 
