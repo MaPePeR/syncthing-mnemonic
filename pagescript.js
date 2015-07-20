@@ -108,7 +108,6 @@ function warning(message) {
 }
 
 $(document).ready(function () {
-    warning('At the moment the code is limited to only generate the old format of the Syncthing DeviceIDs, that does not contain a checksum by itself.');
     'use strict';
     $('#wordInput').attr('disabled', true);
     $('#wordInput').keyup(function () {

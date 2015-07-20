@@ -27,8 +27,9 @@
                     Uses a wordlist from the <a href="https://github.com/trezor/python-mnemonic" target="_blank">trezor/python-mnemonic</a> project.
                 </p>
             </div>
-            <div id="alert_placeholder"></div>
-            <form role="form">
+            <div class="alert alert-info"><strong>Information:</strong> At the moment the code is limited to only generate the <a href="https://forum.syncthing.net/t/v0-9-0-new-node-id-format/478" target="_blank">old format of the Syncthing DeviceIDs</a>. Don't  be surprised, when the resulting DeviceID looks a little bit different. <br/>
+                It will also not use checksum that is integrated in the new DeviceID format.</div>
+            <form role="form-horizontal">
                 <div class="form-group">
                     <label class="radio-inline"><input type="radio" name="direction" value="toWords" checked>To Words</label>
                     <label class="radio-inline"><input type="radio" name="direction" value="toID">To DeviceID</label>
@@ -43,7 +44,12 @@
                     <!--<span class="glyphicon glyphicon-remove form-control-feedback" aria-hidden="true"></span>
                     <span id="wordInputErrorStatus" class="sr-only">(error)</span>-->
                 </div>
-                <button type="button" id="convertbutton" class="btn btn-default">Convert</button>
+                <div class="form-group">
+                    <div class="col-sm-1 col-xs-12">
+                        <button type="button" id="convertbutton" class="btn btn-default">Convert</button>
+                    </div>
+                    <div class="col-sm-11 col-xs-12" id="alert_placeholder">
+                </div>
             </form>
         </div>
         <script type="text/javascript" src="./pagescript.js"></script>
