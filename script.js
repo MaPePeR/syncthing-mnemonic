@@ -10,24 +10,32 @@ var base32map = {};
     }
 }());
 
+function removeCharactersFromString(s, indexes) {
+    var out = '', i, ilast;
+    for (i = 0; i < indexes.length; i += 1) {
+        out += s.substring(ilast, indexes[i]);
+        ilast = indexes[i] + 1;
+    }
+    out += s.substring(ilast);
+    return out;
+}
+
 //P56IOI-7MZJNU-2IQGDR-EYDM2M-GTMGL3-BXNPQ6-W5BTBB-Z4TJXZ-WICQ
 //P56IOI7-MZJNU2Y-IQGDREY-DM2MGTI-MGL3BXN-PQ6W5BM-TBBZ4TJ-XZWICQ2
 //aaaaaaa-aaaaaaA-bbbbbbb-bbbbbbB-ccccccc-ccccccC-ddddddd-ddddddD
-var longDeviceIdPattern = /^[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}-[A-Z2-7]{7}$/;
-var shortDeviceIdPattern = /^[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{6}-[A-Z2-7]{4}$/;
+var longDeviceIdPattern = /^[A-Z2-7]{56}$/;
 var unifiedDeviceIdPattern = /^[A-Z2-7]{52}$/;
 function unifyDeviceId(id) {
     'use strict';
-    if (id.length === 63 && id.match(longDeviceIdPattern)) {
+    id = id.replace(/[-\s]/g, '').replace(/0/g, 'O').replace(/1/g, 'I').replace(/8/g, 'B').toUpperCase();
+    if (id.length === 56 && id.match(longDeviceIdPattern)) {
         //New Device id
-        id = id.substring(0, 14) + id.substring(16, 30) + id.substring(31, 46) + id.substring(47, 62);
-        id = id.replace(/-/g, '');
-    } else if (id.length === 60 && id.match(shortDeviceIdPattern)) {
-        id = id.replace(/-/g, '');
+        return removeCharactersFromString(id, [1 * 13, 1 + 2 * 13, 2 + 3 * 13, 3 + 4 * 13]);
+    } else if (id.length === 52 && id.match(unifiedDeviceIdPattern)) {
+        return id;
     } else {
         throw 'Cannot parse DeviceID!';
     }
-    return id;
 }
 
 function isUnifiedId(id) {
@@ -37,17 +45,26 @@ function isUnifiedId(id) {
 
 function testUnifyDeviceId() {
     'use strict';
+    //Testcases from https://github.com/syncthing/protocol/blob/d84a8e64043f8d6c41cc8d6b7d5ab31c0a25b4c2/deviceid_test.go#L7-L19
     var i, result, tests = [
-        ['P56IOI7-MZJNU2Y-IQGDREY-DM2MGTI-MGL3BXN-PQ6W5BM-TBBZ4TJ-XZWICQ2', 'P56IOI7MZJNU2IQGDREYDM2MGTMGL3BXNPQ6W5BTBBZ4TJXZWICQ'],
-        ['P56IOI-7MZJNU-2IQGDR-EYDM2M-GTMGL3-BXNPQ6-W5BTBB-Z4TJXZ-WICQ', 'P56IOI7MZJNU2IQGDREYDM2MGTMGL3BXNPQ6W5BTBBZ4TJXZWICQ']
-    ];
+        'P56IOI-7MZJNU-2IQGDR-EYDM2M-GTMGL3-BXNPQ6-W5BTBB-Z4TJXZ-WICQ',
+        'P56IOI-7MZJNU2Y-IQGDR-EYDM2M-GTI-MGL3-BXNPQ6-W5BM-TBB-Z4TJXZ-WICQ2',
+        'P56IOI7 MZJNU2I QGDREYD M2MGTMGL 3BXNPQ6W 5BTB BZ4T JXZWICQ',
+        'P56IOI7 MZJNU2Y IQGDREY DM2MGTI MGL3BXN PQ6W5BM TBBZ4TJ XZWICQ2',
+        'P56IOI7MZJNU2IQGDREYDM2MGTMGL3BXNPQ6W5BTBBZ4TJXZWICQ',
+        'p56ioi7mzjnu2iqgdreydm2mgtmgl3bxnpq6w5btbbz4tjxzwicq',
+        'P56IOI7MZJNU2YIQGDREYDM2MGTIMGL3BXNPQ6W5BMTBBZ4TJXZWICQ2',
+        'P561017MZJNU2YIQGDREYDM2MGTIMGL3BXNPQ6W5BMT88Z4TJXZWICQ2',
+        'p56ioi7mzjnu2yiqgdreydm2mgtimgl3bxnpq6w5bmtbbz4tjxzwicq2',
+        'p561017mzjnu2yiqgdreydm2mgtimgl3bxnpq6w5bmt88z4tjxzwicq2'],
+         unified = 'P56IOI7MZJNU2IQGDREYDM2MGTMGL3BXNPQ6W5BTBBZ4TJXZWICQ';
     for (i = 0; i < tests.length; i += 1) {
-        result = unifyDeviceId(tests[i][0]);
+        result = unifyDeviceId(tests[i]);
         if (!isUnifiedId(result)) {
             throw 'Testcase-Fail for unifyDeviceId: Returned non-unified Id';
         }
-        if (result !== tests[i][1]) {
-            throw 'Testcase-Fail for unifyDeviceId: ' + tests[i][0] + ':\n' + result + ' !=\n' + tests[i][1];
+        if (result !== unified) {
+            throw 'Testcase-Fail for unifyDeviceId: ' + tests[i] + ' result: \n' + result + ' !=\n' + unified;
         }
     }
     console.log('testUnifyDeviceId passed');
