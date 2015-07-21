@@ -32,7 +32,7 @@ $('#wordFile').load(function () {
         wordDict[words[i]] = i;
     }
 
-    new Awesomplete(document.getElementById('wordInput'), {
+    var awesomplete = new Awesomplete(document.getElementById('wordInput'), {
         list: words,
         autoFirst: true,
         minChars: 2,
@@ -50,6 +50,15 @@ $('#wordFile').load(function () {
             var before = full.substring(0, cursorPos);
             before = before.substring(0, before.lastIndexOf(' '));
             this.input.value = (before !== '' ?  before + ' ' : '') + text + ' ' + full.substring(cursorPos);
+        }
+    });
+    document.getElementById('wordInput').addEventListener("keydown", function(evt) {
+        var c = evt.keyCode;
+        if(awesomplete.opened) {
+            if (c === 32 && awesomplete.selected) { // Spacebar
+                evt.preventDefault();
+                awesomplete.select();
+            }
         }
     });
 });
