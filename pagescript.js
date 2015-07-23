@@ -173,7 +173,7 @@ $(document).ready(function () {
                 } else {
                     $('#wordInputFormGroup').addClass('has-success').removeClass('has-error');
                     deviceId = wordsToDeviceId(word);
-                    $('#deviceId').val(unifiedToOldFormat(deviceId));
+                    $('#deviceId').val(unifiedToNewFormat(deviceId));
                 }
             }
         } catch (e) {

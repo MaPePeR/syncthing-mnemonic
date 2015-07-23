@@ -1,17 +1,19 @@
+var differentDeviceIdFormats = [
+    'P56IOI-7MZJNU-2IQGDR-EYDM2M-GTMGL3-BXNPQ6-W5BTBB-Z4TJXZ-WICQ',
+    'P56IOI-7MZJNU2Y-IQGDR-EYDM2M-GTI-MGL3-BXNPQ6-W5BM-TBB-Z4TJXZ-WICQ2',
+    'P56IOI7 MZJNU2I QGDREYD M2MGTMGL 3BXNPQ6W 5BTB BZ4T JXZWICQ',
+    'P56IOI7 MZJNU2Y IQGDREY DM2MGTI MGL3BXN PQ6W5BM TBBZ4TJ XZWICQ2',
+    'P56IOI7MZJNU2IQGDREYDM2MGTMGL3BXNPQ6W5BTBBZ4TJXZWICQ',
+    'p56ioi7mzjnu2iqgdreydm2mgtmgl3bxnpq6w5btbbz4tjxzwicq',
+    'P56IOI7MZJNU2YIQGDREYDM2MGTIMGL3BXNPQ6W5BMTBBZ4TJXZWICQ2',
+    'P561017MZJNU2YIQGDREYDM2MGTIMGL3BXNPQ6W5BMT88Z4TJXZWICQ2',
+    'p56ioi7mzjnu2yiqgdreydm2mgtimgl3bxnpq6w5bmtbbz4tjxzwicq2',
+    'p561017mzjnu2yiqgdreydm2mgtimgl3bxnpq6w5bmt88z4tjxzwicq2'];
+
 function testUnifyDeviceId() {
     'use strict';
     //Testcases from https://github.com/syncthing/protocol/blob/d84a8e64043f8d6c41cc8d6b7d5ab31c0a25b4c2/deviceid_test.go#L7-L19
-    var i, result, tests = [
-        'P56IOI-7MZJNU-2IQGDR-EYDM2M-GTMGL3-BXNPQ6-W5BTBB-Z4TJXZ-WICQ',
-        'P56IOI-7MZJNU2Y-IQGDR-EYDM2M-GTI-MGL3-BXNPQ6-W5BM-TBB-Z4TJXZ-WICQ2',
-        'P56IOI7 MZJNU2I QGDREYD M2MGTMGL 3BXNPQ6W 5BTB BZ4T JXZWICQ',
-        'P56IOI7 MZJNU2Y IQGDREY DM2MGTI MGL3BXN PQ6W5BM TBBZ4TJ XZWICQ2',
-        'P56IOI7MZJNU2IQGDREYDM2MGTMGL3BXNPQ6W5BTBBZ4TJXZWICQ',
-        'p56ioi7mzjnu2iqgdreydm2mgtmgl3bxnpq6w5btbbz4tjxzwicq',
-        'P56IOI7MZJNU2YIQGDREYDM2MGTIMGL3BXNPQ6W5BMTBBZ4TJXZWICQ2',
-        'P561017MZJNU2YIQGDREYDM2MGTIMGL3BXNPQ6W5BMT88Z4TJXZWICQ2',
-        'p56ioi7mzjnu2yiqgdreydm2mgtimgl3bxnpq6w5bmtbbz4tjxzwicq2',
-        'p561017mzjnu2yiqgdreydm2mgtimgl3bxnpq6w5bmt88z4tjxzwicq2'],
+    var i, result, tests = differentDeviceIdFormats,
          unified = 'P56IOI7MZJNU2IQGDREYDM2MGTMGL3BXNPQ6W5BTBBZ4TJXZWICQ';
     for (i = 0; i < tests.length; i += 1) {
         result = unifyDeviceId(tests[i]);
@@ -25,6 +27,22 @@ function testUnifyDeviceId() {
     console.log('testUnifyDeviceId passed');
 }
 
+function testChecksumErrorInNewDeviceId() {
+    'use strict';
+    var id;
+    try {
+        for (id in differentDeviceIdFormats) {
+            unifyDeviceId(id.replace(/2$/,5));
+            unifyDeviceId(id.replace(/^P/,'E'));
+            unifyDeviceId(id.replace('GTI','AE1'));
+        }
+    } catch (e) {
+        console.log('testChecksumErrorInNewDeviceId passed');
+        return;
+    }
+    throw "Testcase-Fail for testChecksumErrorInNewDeviceId: did not throw an exception on checksum-error";
+}
+
 function testUnifiedToOldFormat() {
     'use strict';
     var oldformat = 'P56IOI-7MZJNU-2IQGDR-EYDM2M-GTMGL3-BXNPQ6-W5BTBB-Z4TJXZ-WICQ';
@@ -34,6 +52,18 @@ function testUnifiedToOldFormat() {
         throw 'Testcase-Fail for unifiedToOldFormat: got \'' + result + '\' expected \'' + oldformat + '\'';
     }
     console.log('testUnifiedToOldFormat passed');
+}
+
+function testUnifiedToNewFormat() {
+    var i, id, expected = 'P56IOI7-MZJNU2Y-IQGDREY-DM2MGTI-MGL3BXN-PQ6W5BM-TBBZ4TJ-XZWICQ2', result;
+    for (i = 0; i < differentDeviceIdFormats.length; i += 1) {
+        id = differentDeviceIdFormats[i];
+        result = unifiedToNewFormat(unifyDeviceId(id));
+        if (result !== expected) {
+            throw 'Testcase-Fail for testUnifiedToNewFormat: got \'' + result + '\' expected \'' + expected + '\'';
+        }
+    }
+    console.log('testUnifiedToNewFormat passed')
 }
 
 function testGetBitFromBase32() {
@@ -105,3 +135,5 @@ testGetBitFromBase32();
 testRegroupBitsWithHex();
 testForwardBackwordsConversion();
 testUnifiedToOldFormat();
+testChecksumErrorInNewDeviceId();
+testUnifiedToNewFormat();
