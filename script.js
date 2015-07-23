@@ -27,10 +27,16 @@ var longDeviceIdPattern = /^[A-Z2-7]{56}$/;
 var unifiedDeviceIdPattern = /^[A-Z2-7]{52}$/;
 function unifyDeviceId(id) {
     'use strict';
+    var unified, unifiedWithChecks;
     id = id.replace(/[-\s]/g, '').replace(/0/g, 'O').replace(/1/g, 'I').replace(/8/g, 'B').toUpperCase();
     if (id.length === 56 && id.match(longDeviceIdPattern)) {
         //New Device id
-        return removeCharactersFromString(id, [1 * 13, 1 + 2 * 13, 2 + 3 * 13, 3 + 4 * 13]);
+        unified = removeCharactersFromString(id, [1 * 13, 1 + 2 * 13, 2 + 3 * 13, 3 + 4 * 13]);
+        unifiedWithChecks = unifiedToNewFormatWithoutDashes(unified);
+        if (id !== unifiedWithChecks) {
+            throw "Checksum in DeviceID indicated an error!";
+        }
+        return unified;
     } else if (id.length === 52 && id.match(unifiedDeviceIdPattern)) {
         return id;
     } else {
@@ -50,15 +56,61 @@ function checkUnifiedId(unifiedId) {
     }
 }
 
+function groupWithDashes(s, groups) {
+    'use strict';
+    var out = '', sum = 0, i;
+    for (i = 0; i < groups.length - 1; i += 1) {
+        out += s.substring(sum, sum + groups[i]) + '-';
+        sum += groups[i];
+    }
+    return out + s.substring(sum, sum + groups[groups.length - 1]);
+}
+
 function unifiedToOldFormat(unifiedId) {
     'use strict';
     checkUnifiedId(unifiedId);
-    var out = '', sum = 0, i, oldFormatGroups = [6, 6, 6, 6, 6, 6, 6, 6, 4];
-    for (i = 0; i < oldFormatGroups.length - 1; i += 1) {
-        out += unifiedId.substring(sum, sum + oldFormatGroups[i]) + '-';
-        sum += oldFormatGroups[i];
+    return groupWithDashes(unifiedId, [6, 6, 6, 6, 6, 6, 6, 6, 4]);
+}
+
+function luhnGenerateBase32(s) {
+    //Source: https://github.com/calmh/luhn/blob/0c8388ff95fa92d4094011e5a04fc99dea3d1632/luhn.go#L21-L47
+    'use strict';
+    var i, sum = 0, codepoint, addend, remainder, factor = 1, n = base32chars.length;
+    for (i = 0; i < s.length; i += 1) {
+		if (!(s[i] in base32map))  {
+			throw "unknown character " + s[i];
+		}
+        codepoint = base32map[s[i]];
+		addend = factor * codepoint;
+		if (factor == 2) {
+			factor = 1;
+		} else {
+			factor = 2;
+		}
+		addend = Math.floor(addend / n) + (addend % n);
+		sum += addend;
+	}
+    remainder = sum % n
+	return  base32chars[(n - remainder) % n]
+}
+
+function unifiedToNewFormatWithoutDashes(unifiedId) {
+    //Source: https://github.com/syncthing/protocol/blob/f9132cae85dcda1caba2f4ba78996d348b00ac6c/deviceid.go#L109-L124
+    'use strict';
+    var i, group, out = "", check;
+    checkUnifiedId(unifiedId);
+    for (i = 0; i < 4; i += 1) {
+        group = unifiedId.substring(i*13, (i+1)*13);
+        check = luhnGenerateBase32(group);
+        out += "" + group + check;
     }
-    return out + unifiedId.substring(sum, sum + oldFormatGroups[oldFormatGroups.length - 1]);
+    return out;
+}
+
+function unifiedToNewFormat(unifiedId) {
+    'use strict';
+    var s = unifiedToNewFormatWithoutDashes(unifiedId);
+    return groupWithDashes(s, [7, 7, 7, 7, 7, 7, 7, 7]);
 }
 
 function getBitFromBase32(unifiedId, n) {
